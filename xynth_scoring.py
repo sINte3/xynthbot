@@ -1,62 +1,48 @@
-# xynth_scoring.py
-
 import requests
 
-LUNAR_API = "haef4br11i6lfgm49ewblvftcemacaulo7b2ynraq"
-
-TOKENS = [
-    {"symbol": "LDO"},
-    {"symbol": "OP"},
-    {"symbol": "ARB"},
-    {"symbol": "PYTH"},
-    {"symbol": "SUSHI"}
-]
-
 def get_top_tokens_with_scores():
-    results = []
-    for token in TOKENS:
+    url = "https://api.coingecko.com/api/v3/coins/markets"
+    params = {
+        "vs_currency": "usd",
+        "order": "market_cap_desc",
+        "per_page": 50,
+        "page": 1,
+        "sparkline": "false"
+    }
+
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        coins = response.json()
+    except Exception as e:
+        print("Ошибка при запросе CoinGecko:", e)
+        return []
+
+    tokens = []
+    for coin in coins:
         try:
-            symbol = token['symbol']
-            sentiment = get_sentiment_score(symbol)
-            onchain = get_onchain_score(symbol)      # заглушка
-            finance = get_finance_score(symbol)      # заглушка
-            dev = get_dev_score(symbol)              # заглушка
+            name = coin["name"]
+            symbol = coin["symbol"].upper()
+            price = coin["current_price"]
+            volume = coin["total_volume"]
+            market_cap = coin["market_cap"]
+            price_change = coin["price_change_percentage_24h"] or 0
 
-            total_score = round(sentiment*0.5 + onchain*0.2 + finance*0.15 + dev*0.15, 1)
-
-            results.append({
+            # вычисление "score"
+            score = round((price_change * 1.5) + (volume / market_cap * 100), 2)
+            token = {
+                "name": name,
                 "symbol": symbol,
-                "score": total_score,
-                "sentiment": sentiment,
-                "onchain": onchain,
-                "finance": finance,
-                "dev": dev
-            })
+                "price": price,
+                "score": score,
+                "change": price_change,
+                "volume": volume,
+                "market_cap": market_cap
+            }
+
+            if score >= 70:
+                tokens.append(token)
+
         except Exception as e:
-            print(f"Ошибка для {symbol}: {e}")
-    return sorted(results, key=lambda x: x['score'], reverse=True)
+            print(f"Ошибка токена {coin.get('symbol', '?')}: {e}")
 
-def get_sentiment_score(symbol):
-    url = f"https://api.lunarcrush.com/v2?data=assets&symbol={symbol}&key={LUNAR_API}"
-    response = requests.get(url)
-    data = response.json()
-
-    # Проверка, что API вернул данные
-    if "data" in data and len(data["data"]) > 0:
-        alt_rank = data["data"][0]["alt_rank"]
-        galaxy_score = data["data"][0]["galaxy_score"]
-        score = max(100 - alt_rank, 0) * 0.4 + galaxy_score * 0.6  # Взвешенная формула
-        return round(score, 1)
-    else:
-        return 50  # если нет данных — нейтральный балл
-
-# заглушки:
-def get_onchain_score(symbol): return 60 + hash(symbol[::-1]) % 30
-def get_finance_score(symbol): return 55 + len(symbol) % 25
-def get_dev_score(symbol): return 65 + sum(ord(c) for c in symbol) % 15
-
-if __name__ == "__main__":
-    tokens = get_top_tokens_with_scores()
-    for token in tokens:
-        print(token)
-
+    return tokens
