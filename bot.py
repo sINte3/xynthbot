@@ -38,7 +38,8 @@ async def check_and_alert():
     f"<b>Объём / Капитализация:</b> {token['volume']:,} / {token['market_cap']:,}\n"
     f"<b>Оценка (score):</b> {token['score']:.1f}"
 )
-                await bot.send_message(ADMIN_ID, message)
+               print(f"Отправляю токен: {token['symbol']} со скором {token['score']}")
+await bot.send_message(ADMIN_ID, message)
         await asyncio.sleep(86400)
 
 # === ЗАПУСК ===
