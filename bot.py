@@ -31,14 +31,13 @@ async def check_and_alert():
         for token in tokens:
             if token["score"] >= 70:
                 message = (
-                    f"🔥 <b>[Xynth Alert]</b>\n"
-                    f"<b>Токен:</b> ${token['symbol']}\n"
-                    f"<b>Общий скор:</b> {token['score']} / 100\n"
-                    f"Сентимент: {token['sentiment']}\n"
-                    f"Ончейн: {token['onchain']}\n"
-                    f"Финансы: {token['finance']}\n"
-                    f"Dev активность: {token['dev']}"
-                )
+    f"📈 <b>Найден перспективный токен</b>\n"
+    f"<b>Название:</b> {token['name']} (${token['symbol']})\n"
+    f"<b>Текущая цена:</b> ${token['price']:.4f}\n"
+    f"<b>Изменение 24ч:</b> {token['change']:.2f}%\n"
+    f"<b>Объём / Капитализация:</b> {token['volume']:,} / {token['market_cap']:,}\n"
+    f"<b>Оценка (score):</b> {token['score']:.1f}"
+)
                 await bot.send_message(ADMIN_ID, message)
         await asyncio.sleep(86400)
 
